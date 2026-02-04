@@ -17,32 +17,55 @@ The primary goal of this project is to separate the *definition* of a workflow f
 
 ---
 
+## Installation & Setup
+
+**Core Requirement**: This project must be installed as a submodule within a working ComfyUI installation.
+
+1.  Clone this repository to a separate location (e.g., `~/repos/Json_gui_comfy`).
+2.  Navigate to your ComfyUI root directory.
+3.  Create a symbolic link named `json_gui` pointing to the cloned repository.
+
+   ```bash
+   cd path/to/ComfyUI
+   ln -s /path/to/Json_gui_comfy json_gui
+   ```
+
+**Important**: The folder/symlink inside ComfyUI **MUST** be named `json_gui` for imports to work correctly.
+
 ## How to Run
 
-This application is designed to be run as a Python module. Below is the recommended Visual Studio Code Launch Configuration.
+This application is run from the ComfyUI root directory.
 
 ### VS Code Configuration
 
-Add the following to your `.vscode/launch.json` or workspace configuration:
+Add the following to your `.vscode/launch.json` in the ComfyUI workspace (or your fork):
 
 ```json
 {
-  "name": "Python Debugger: Stable Diffussion",
+  "name": "Run JSON GUI",
   "type": "debugpy",
-  "env": {
-    "PYTHONPATH": "${workspaceFolder:main}"
-  },
-  "python": "${command:python.interpreterPath}",
-  // "justMyCode": false,
-  "console": "integratedTerminal",
   "request": "launch",
-  "module": "main_json_gui",
-  "args": "--temp-directory dummypath/temp --verbose DEBUG",
+  "program": "json_gui/main_json_gui.py",
+  "cwd": "${workspaceFolder}",
+  "console": "integratedTerminal",
+  "args": [
+    "--temp-directory", "workspace_temp/test_run",
+    "--verbose", "DEBUG"
+  ],
+  "env": {
+      "PYTHONPATH": "${workspaceFolder}"
+  },
   "subProcess": true
 }
 ```
 
-### Command Line Arguments
+### Command Line
+
+From the ComfyUI root directory:
+
+```bash
+python json_gui/main_json_gui.py --verbose DEBUG
+```
 
 * `--temp-directory`: Specifies the directory where temporary files and logs are stored.
 * `--verbose`: Sets the logging level (e.g., `DEBUG`, `INFO`).
