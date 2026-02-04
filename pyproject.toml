@@ -1,0 +1,113 @@
+[tool.poetry]
+name = "json-gui-comfy"
+version = "0.1.0"
+description = "A ComfyUI submodule that allows creating images using JSON files that can be updated from a dedicated independent UI. It has its own entry point to use instead of the original ComfyUI one."
+authors = ["Carlos Morales <carlos.mor.ort@gmail.com>"]
+license = "COMFYUI JSON WORKFLOW LICENSE (CJWL)"
+readme = "README.md"
+# Indica explícitamente qué incluir
+packages = [
+    { include = "json_manager" },
+    { include = "scripts" },
+    { include = "utils.py" },
+    { include = "server.py" },
+    { include = "c_logger.py" },
+    { include = "p_logger.py" },
+    { include = "constants.py" },
+    { include = "typedicts.py" },
+    # Si quieres que el script principal sea instalable como módulo:
+    { include = "main_json_gui.py" },
+]
+
+[tool.poetry.dependencies]
+python = "3.13.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.mypy]
+check_untyped_defs = true
+python_version = "3.13.7"
+disable_error_code = ["import-untyped","override"]
+mypy_path = "./out"
+# Limit default type-checking scope to json_gui only.
+files = ["json_gui"]
+
+# Don't type-check imported project modules outside the target scope.
+# This keeps the report focused on json_gui, but it can reduce cross-module type safety.
+follow_imports = "skip"
+exclude = [
+    '\.venv/.*',
+    '.+\.pyi',
+    '/opt/.*',
+    '.*/site-packages/.*',
+    'custom_nodes/_ComfyUI-Logic\.disabled/.*',
+    'custom_nodes/_ComfyUI_essentials\.disabled/.*',
+    'workspace_temp/.*',
+    'src/tests/.*',
+    'tests/execution/testing_nodes/testing-pack/.*',
+]
+
+[tool.pylint.master]
+load-plugins = ["workspace_temp.custom_checkers"]
+ignore-patterns = ["\\.venv/.*", ".+\\.pyi", "/opt/.*",".*/site-packages/.*", "workspace_temp/.*"]
+
+[tool.pylint.messages_control]
+enable = ["MissingReturnTypeChecker"]
+disable = ["R0903", "I1101", "C0301", "W0718"]
+
+[tool.pylint.format]
+max-line-length = 200
+
+[tool.pylint.design]
+max-args = 10
+max-positional-arguments = 10
+max-attributes = 12
+
+[tool.flake8]
+max-line-length = 120
+ignore = [
+    "E303", # too many blank lines
+    "E704", # multiple statements on one line (def foo(): bar(); baz())
+]
+exclude = [
+    ".venv",
+    "build",
+    "dist",
+    "__pycache__",
+    "*.pyc",
+    "*.egg-info",
+    "**/pylint/**",
+    "src/tests/**"
+]
+
+
+[tool.pytest.ini_options]
+testpaths = ["json_gui_test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=json_gui --cov-report=term-missing --cov-report=html:coverage_html --cov-fail-under=95 --html=report.html"
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/site-packages/*",
+]
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pylint (>=4.0.4,<5.0.0)",
+    "mypy (>=1.19.1,<2.0.0)",
+    "flake8 (>=7.3.0,<8.0.0)",
+    "pytest-html (>=4.2.0,<5.0.0)",
+    "flake8-pyproject (>=1.2.4,<2.0.0)",
+    "pytest-pylint (>=0.21.0,<0.22.0)",
+    "mypy-extensions (>=1.1.0,<2.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)"
+]
