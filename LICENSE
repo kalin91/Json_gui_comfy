@@ -1,0 +1,122 @@
+COMFYUI JSON WORKFLOW LICENSE (CJWL)
+
+Version 1.0, February 2026
+Copyright (C) 2026 [Azl Technologies]
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+PREAMBLE
+This license is designed to allow free use, modification, and distribution of the software for non-commercial purposes, while reserving commercial rights exclusively to the copyright holder. Unlike permissive licenses, this license ensures that the original author maintains control over commercial exploitation while fostering a collaborative open-source community for non-commercial users.
+
+1. DEFINITIONS
+"The Software" refers to the ComfyUI JSON Workflow system, including all source code, documentation, configuration files, user interface components, and associated materials provided under this license.
+"You" or "Licensee" means any individual or legal entity exercising permissions granted by this License.
+"Commercial Use" means any use of the Software where the primary intent is monetary gain, including but not limited to:
+
+Selling the Software or modified versions thereof
+Offering the Software as a paid service (SaaS, hosting, etc.)
+Incorporating the Software into a commercial product
+Using the Software in any business operation where it contributes to revenue generation
+Providing consulting, support, or training services centered on the Software for a fee
+
+"Non-Commercial Use" means use for personal, educational, research, or charitable purposes where no monetary compensation is received.
+"Derivative Work" means any work based upon the Software, including modifications, extensions, translations, or any work that incorporates substantial portions of the Software.
+"Source Code" means the preferred form for making modifications to the Software, including all modules, interface definitions, scripts, and configuration files.
+"Distribution" means making copies of the Software available to third parties by any means.
+2. GRANT OF RIGHTS
+2.1 Non-Commercial Rights
+Subject to the terms of this License, You are granted a worldwide, royalty-free, non-exclusive license to:
+a) Use the Software for any Non-Commercial purpose
+b) Modify the Software and create Derivative Works
+c) Distribute copies of the original or modified Software for Non-Commercial purposes
+d) Publicly display and publicly perform the Software
+2.2 Commercial Rights Reserved
+All Commercial Use rights are explicitly reserved to the copyright holder. Any Commercial Use requires a separate commercial license agreement with the copyright holder.
+To obtain a commercial license, contact: [tu-email@ejemplo.com]
+3. CONDITIONS AND LIMITATIONS
+3.1 Attribution Requirement
+You must retain the following in all copies or substantial portions of the Software:
+
+Copyright notices
+This license text
+All author attributions
+Link to the original repository: [URL del repo]
+
+3.2 Copyleft Provision
+Any Derivative Work You distribute must be licensed under this same License (CJWL v1.0 or later), ensuring the same rights and restrictions apply to downstream recipients.
+3.3 Source Code Availability
+If You distribute the Software or any Derivative Work, You must make the complete Source Code available under the same terms, either:
+
+Included with the distribution, or
+Accessible via a publicly available repository with clear instructions
+
+3.4 Modification Notice
+Modified versions must:
+
+Clearly indicate that changes have been made
+Include the date of modifications
+Not misrepresent the origin of the Software
+Not use the original project name without explicit permission
+
+3.5 No Sublicensing
+You may not grant sublicenses. Each recipient of the Software receives their license directly from the copyright holder under these same terms.
+3.6 Trademark Restrictions
+This License does not grant permission to use trade names, trademarks, service marks, or product names of the copyright holder, except as required for reasonable and customary use in describing the origin of the Software.
+4. PROHIBITED ACTIVITIES
+You may NOT:
+a) Use the Software for Commercial purposes without a separate commercial license
+b) Remove or alter any copyright notices or license terms
+c) Misrepresent the origin or authorship of the Software
+d) Use the Software in any way that violates applicable laws
+e) Circumvent any technical protection measures in the Software
+f) Grant any rights beyond those granted in this License
+5. COMMERCIAL LICENSE INQUIRIES
+If You are uncertain whether Your use constitutes Commercial Use, You should contact the copyright holder for clarification before proceeding.
+Examples that typically require a commercial license:
+
+Running the Software on cloud infrastructure for paying customers
+Embedding the Software in a product You sell
+Offering the Software as part of a paid enterprise solution
+Using the Software to generate revenue through advertisements or subscriptions
+
+1. TERMINATION
+6.1 Automatic Termination
+Your rights under this License terminate automatically if You:
+
+Violate any term of this License
+Initiate litigation claiming the Software infringes a patent
+Attempt to commercialize the Software without authorization
+
+6.2 Cure Period
+If You violate this License but correct the violation within 30 days of discovery or notification, Your license is reinstated provisionally. However, repeated violations result in permanent termination.
+6.3 Effect of Termination
+Upon termination:
+
+You must cease all use and distribution of the Software
+You must destroy all copies in Your possession
+Downstream recipients who received the Software from You retain their licenses if they remain in compliance
+
+1. PATENTS
+The copyright holder grants You a limited patent license only for Non-Commercial use of the Software. This patent license is revoked if You initiate patent litigation against the copyright holder or any contributor.
+2. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+The entire risk as to the quality and performance of the Software is with You. Should the Software prove defective, You assume the cost of all necessary servicing, repair, or correction.
+3. LIMITATION OF LIABILITY
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+This limitation applies even if the copyright holder has been advised of the possibility of such damages.
+4. CONTRIBUTIONS
+10.1 Contribution Terms
+By submitting code, documentation, or other materials to the Software project, You:
+
+Grant the copyright holder a perpetual, irrevocable license to use Your contribution under any license terms
+Represent that You have the legal right to grant these rights
+Agree that Your contribution may be used in commercial versions
+
+10.2 Contributor Recognition
+Contributors will be acknowledged in the project documentation unless they explicitly request otherwise.
+11. VERSIONING
+The copyright holder may publish revised versions of this License. You may choose to use the Software under the terms of the version under which You originally received it, or any later version.
+12. GOVERNING LAW
+This License is governed by the laws of [Tu Jurisdicción], excluding conflict-of-law provisions.
+13. SEVERABILITY
+If any provision of this License is held to be unenforceable, that provision shall be reformed only to the extent necessary to make it enforceable, and the remaining provisions shall remain in full effect.
+14. ENTIRE AGREEMENT
+This License constitutes the entire agreement between the parties concerning the subject matter hereof.

@@ -1,0 +1,347 @@
+props:
+  prompts:
+    type: object
+    isArray: false
+    props:
+      positive:
+        type: multiline_string
+        isArray: false
+      negative:
+        type: multiline_string
+        isArray: false
+  openpose_pose:
+    type: object
+    isArray: false
+    props:
+      controlnet_path:
+        type: file
+        isArray: false
+        parent: controlnet
+      image_name:
+        type: file
+        isArray: false
+        parent: input
+      detect_hands:
+        type: bool
+        isArray: false
+      detect_body:
+        type: bool
+        isArray: false
+      detect_face:
+        type: bool
+        isArray: false
+      resolution:
+        type: int
+        isArray: false
+        min: 16
+        max: 16384
+        step: 16
+      scale_stick_for_xinsr_cn:
+        type: bool
+        isArray: false
+      skip:
+        type: bool
+        isArray: false
+  canny_edge:
+    type: object
+    isArray: false
+    props:
+      controlnet_path:
+        type: file
+        isArray: false
+        parent: controlnet
+      image_name:
+        type: file
+        isArray: false
+        parent: input
+      low_threshold:
+        type: int
+        isArray: false
+        min: 0
+        max: 255
+      high_threshold:
+        type: int
+        isArray: false
+        min: 0
+        max: 255
+      resolution:
+        type: int
+        isArray: false
+        min: 16
+        max: 16384
+        step: 16
+      skip:
+        type: bool
+        isArray: false
+  apply_control_net:
+    type: object
+    isArray: true
+    props:
+      strength:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 10.0
+        step: 0.01
+        format: "%.2f"
+      start_percentage:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.001
+        format: "%.3f"
+      end_percentage:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.001
+        format: "%.3f"
+      target:
+        type: combo
+        values:
+          - "canny_edge"
+          - "openpose_pose"
+        isArray: false
+  empty_latent:
+    type: object
+    isArray: false
+    props:
+      width:
+        type: int
+        isArray: false
+        min: 16
+        max: 16384
+        step: 16
+      height:
+        type: int
+        isArray: false
+        min: 16
+        max: 16384
+        step: 16
+      batch_size:
+        type: int
+        isArray: false
+        min: 1
+        max: 4096
+      image_name:
+        type: file
+        isArray: false
+        hasNone: true
+        parent: input
+  simple_k_sampler:
+    type: object
+    isArray: true
+    props:
+      use_tune:
+        type: bool
+        isArray: false
+      seed:
+        type: int
+        isArray: false
+        randomizable: true
+      steps:
+        type: int
+        isArray: false
+        min: 1
+        max: 10000
+      cfg:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 100.0
+        step: 0.1
+        format: "%.2f"
+      sampler_name:
+        type: combo
+        constant: "sampler_names"
+        isArray: false
+      scheduler:
+        type: combo
+        constant: "scheduler_names"
+        isArray: false
+      denoise:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.01
+        format: "%.2f"
+  face_detailer:
+    type: object
+    isArray: false
+    props:
+      use_tune:
+        type: bool
+        isArray: false
+      seed:
+        type: int
+        isArray: false
+        randomizable: true
+      steps:
+        type: int
+        isArray: false
+        min: 1
+        max: 10000
+      cfg:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 100.0
+        step: 0.1
+        format: "%.2f"
+      sampler_name:
+        type: combo
+        isArray: false
+        constant: "sampler_names"
+      scheduler:
+        type: combo
+        isArray: false
+        constant: "scheduler_handlers"
+      denoise:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.01
+        format: "%.2f"
+      guide_size:
+        type: int
+        isArray: false
+        min: 64
+        max: 16384
+        step: 8
+      guide_size_for:
+        type: bool
+        isArray: false
+      max_size:
+        type: int
+        isArray: false
+        min: 64
+        max: 16384
+        step: 8
+      feather:
+        type: int
+        isArray: false
+        min: 0
+        max: 100
+      noise_mask:
+        type: bool
+        isArray: false
+      force_inpaint:
+        type: bool
+        isArray: false
+      drop_size:
+        type: int
+        isArray: false
+        min: 1
+        max: 16384
+      cycle:
+        type: int
+        isArray: false
+        min: 1
+        max: 10
+      bbox_threshold:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.01
+        format: "%.2f"
+      bbox_dilation:
+        type: int
+        isArray: false
+        min: -512
+        max: 512
+      bbox_crop_factor:
+        type: float
+        isArray: false
+        min: 1.0
+        max: 10.0
+        step: 0.1
+        format: "%.1f"
+      sam_detection_hint:
+        type: combo
+        isArray: false
+        constant: "sam_detection_hint"
+      sam_dilation:
+        type: int
+        isArray: false
+        min: -512
+        max: 512
+      sam_threshold:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.01
+        format: "%.2f"
+      sam_bbox_expansion:
+        type: int
+        isArray: false
+        min: 0
+        max: 1000
+      sam_mask_hint_threshold:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.01
+        format: "%.2f"
+      sam_mask_hint_use_negative:
+        type: string
+        isArray: false
+      wildcard:
+        type: string
+        isArray: false
+      bbox_detector:
+        type: file
+        isArray: false
+        parent: ultralytics_bbox
+        prefix: "bbox/"
+      sam_model_opt:
+        type: file
+        isArray: false
+        parent: sams
+  rotator:
+    type: object
+    isArray: false
+    props:
+      angle:
+        type: float
+        isArray: false
+        min: -360.0
+        max: 360.0
+        step: 0.1
+        format: "%.1f"
+  skip_layers_model:
+    type: object
+    isArray: false
+    props:
+      layers:
+        type: int
+        isArray: true
+        min: 0.0
+        max: 99.0
+      scale:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 18.0
+        step: 0.1
+        format: "%.1f"
+      start_percent:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.001
+        format: "%.3f"
+      end_percent:
+        type: float
+        isArray: false
+        min: 0.0
+        max: 1.0
+        step: 0.001
+        format: "%.3f"
