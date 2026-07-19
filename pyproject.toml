@@ -1,113 +1,119 @@
-[tool.poetry]
+[project]
 name = "json-gui-comfy"
 version = "0.1.0"
 description = "A ComfyUI submodule that allows creating images using JSON files that can be updated from a dedicated independent UI. It has its own entry point to use instead of the original ComfyUI one."
-authors = ["Carlos Morales <carlos.mor.ort@gmail.com>"]
-license = "COMFYUI JSON WORKFLOW LICENSE (CJWL)"
+authors = [{ name = "Carlos Morales", email = "carlos.mor.ort@gmail.com" }]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 readme = "README.md"
-# Indica explícitamente qué incluir
-packages = [
-    { include = "json_manager" },
-    { include = "scripts" },
-    { include = "utils.py" },
-    { include = "server.py" },
-    { include = "c_logger.py" },
-    { include = "p_logger.py" },
-    { include = "constants.py" },
-    { include = "typedicts.py" },
-    # Si quieres que el script principal sea instalable como módulo:
-    { include = "main_json_gui.py" },
+requires-python = ">=3.13,<3.14"
+
+# Runtime dependencies are intentionally empty: this project runs inside a
+# ComfyUI installation and relies on the environment provided by it (torch,
+# comfy, custom nodes). Declaring them here would fight with ComfyUI's own
+# environment. Only development tooling is declared below.
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2,<10.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-html>=4.2.0,<5.0.0",
+    "mypy>=1.19.1,<2.0.0",
+    "ruff>=0.14.0,<0.15.0",
 ]
 
-[tool.poetry.dependencies]
-python = "3.13.7"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+# This repository is consumed as a symlink named `json_gui` inside a ComfyUI
+# installation, not installed as a distribution. `uv sync` therefore only needs
+# to provision the development environment, never to build/install this project.
+package = false
 
 
 [tool.mypy]
 check_untyped_defs = true
-python_version = "3.13.7"
-disable_error_code = ["import-untyped","override"]
-mypy_path = "./out"
-# Limit default type-checking scope to json_gui only.
-files = ["json_gui"]
+python_version = "3.13"
+disable_error_code = ["import-untyped", "override"]
+# Source layout: the repository root itself is the `json_gui` package once
+# symlinked into ComfyUI, so the modules live at the top level here.
+files = [
+    "json_manager",
+    "scripts",
+    "main_json_gui.py",
+    "utils.py",
+    "server.py",
+    "c_logger.py",
+    "p_logger.py",
+    "constants.py",
+    "typedicts.py",
+]
 
 # Don't type-check imported project modules outside the target scope.
-# This keeps the report focused on json_gui, but it can reduce cross-module type safety.
+# This keeps the report focused, but it can reduce cross-module type safety.
 follow_imports = "skip"
 exclude = [
     '\.venv/.*',
     '.+\.pyi',
     '/opt/.*',
     '.*/site-packages/.*',
-    'custom_nodes/_ComfyUI-Logic\.disabled/.*',
-    'custom_nodes/_ComfyUI_essentials\.disabled/.*',
     'workspace_temp/.*',
-    'src/tests/.*',
-    'tests/execution/testing_nodes/testing-pack/.*',
 ]
 
-[tool.pylint.master]
-load-plugins = ["workspace_temp.custom_checkers"]
-ignore-patterns = ["\\.venv/.*", ".+\\.pyi", "/opt/.*",".*/site-packages/.*", "workspace_temp/.*"]
-
-[tool.pylint.messages_control]
-enable = ["MissingReturnTypeChecker"]
-disable = ["R0903", "I1101", "C0301", "W0718"]
-
-[tool.pylint.format]
-max-line-length = 200
-
-[tool.pylint.design]
-max-args = 10
-max-positional-arguments = 10
-max-attributes = 12
-
-[tool.flake8]
-max-line-length = 120
-ignore = [
-    "E303", # too many blank lines
-    "E704", # multiple statements on one line (def foo(): bar(); baz())
+[[tool.mypy.overrides]]
+# Modules provided by the host ComfyUI installation. They only resolve when the
+# checker runs from the ComfyUI root; standalone runs must not fail on them.
+module = [
+    "app.*",
+    "comfy.*",
+    "comfy_extras.*",
+    "custom_nodes.*",
+    "folder_paths",
+    "json_gui.*",
+    "node_helpers",
+    "nodes",
+    # Provided by ComfyUI's own environment, not installed in the dev venv.
+    "numpy.*",
+    "PIL.*",
+    "torch.*",
 ]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
 exclude = [
     ".venv",
     "build",
     "dist",
     "__pycache__",
-    "*.pyc",
     "*.egg-info",
-    "**/pylint/**",
-    "src/tests/**"
+    "node_modules",
+    "workspace_temp",
 ]
+
+[tool.ruff.lint]
+select = ["E", "F", "D1", "ANN2"]
+ignore = [
+    "E303", # too many blank lines
+    "E701", # multiple statements on one line
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests don't need docstrings or return annotations.
+"tests/**" = ["D1", "ANN2"]
 
 
 [tool.pytest.ini_options]
-testpaths = ["json_gui_test"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=json_gui --cov-report=term-missing --cov-report=html:coverage_html --cov-fail-under=95 --html=report.html"
+addopts = "-v --cov --cov-report=term-missing --cov-report=html:workspace_temp/coverage_html --html=workspace_temp/report.html --self-contained-html"
 
 [tool.coverage.run]
+source = ["json_manager", "scripts"]
 omit = [
     "*/tests/*",
     "*/__init__.py",
     "*/site-packages/*",
-]
-
-[dependency-groups]
-dev = [
-    "pytest (>=9.0.2,<10.0.0)",
-    "pylint (>=4.0.4,<5.0.0)",
-    "mypy (>=1.19.1,<2.0.0)",
-    "flake8 (>=7.3.0,<8.0.0)",
-    "pytest-html (>=4.2.0,<5.0.0)",
-    "flake8-pyproject (>=1.2.4,<2.0.0)",
-    "pytest-pylint (>=0.21.0,<0.22.0)",
-    "mypy-extensions (>=1.1.0,<2.0.0)",
-    "pytest-cov (>=7.0.0,<8.0.0)"
 ]

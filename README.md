@@ -32,6 +32,27 @@ The primary goal of this project is to separate the *definition* of a workflow f
 
 **Important**: The folder/symlink inside ComfyUI **MUST** be named `json_gui` for imports to work correctly.
 
+### Development Environment
+
+This repository is **not** an installable distribution — it is consumed as a symlink inside ComfyUI, and its runtime dependencies (`torch`, `comfy`, custom nodes) come from the host ComfyUI environment. The `pyproject.toml` here only provisions the **development tooling** (tests, linter, type checker) and holds their configuration.
+
+Dependencies are managed with [uv](https://docs.astral.sh/uv/):
+
+```bash
+# From the repository root
+uv sync
+```
+
+This creates `.venv/` from the pinned `uv.lock`. Then:
+
+```bash
+uv run ruff check .   # Lint
+uv run mypy           # Type check
+uv run pytest         # Tests + coverage
+```
+
+Modules provided by ComfyUI (`comfy.*`, `folder_paths`, `torch`, `numpy`, `PIL`, …) are declared as `ignore_missing_imports` in the mypy config, so type checking works standalone. Running mypy from the ComfyUI root will resolve them for real and give stricter results.
+
 ## How to Run
 
 This application is run from the ComfyUI root directory.
@@ -709,4 +730,9 @@ This allows you to:
 
 ## Configuration Files
 
-* **`pyproject.toml`** (root): Contains configurations for **pylint**, **mypy**, and **pytest**. All linting, type-checking, and testing tools use this as their primary configuration file.
+* **`pyproject.toml`** (root): Project metadata plus the configuration for **ruff** (lint), **mypy** (type checking) and **pytest**/**coverage**. Development dependencies live in `[dependency-groups]` (PEP 735) and are resolved by uv.
+* **`uv.lock`**: Pinned development environment. Committed — do not edit by hand; regenerate with `uv lock`.
+
+## License
+
+Distributed under the **GNU General Public License v3.0 or later**. See [LICENSE](LICENSE).
