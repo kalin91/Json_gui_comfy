@@ -6,8 +6,7 @@ import pickle
 import signal
 from functools import partial
 from typing import Any, TypeVar, Optional, cast
-from torch import Tensor, multiprocessing as mlp, device
-from comfy.model_management import get_torch_device
+from torch import Tensor, inference_mode, multiprocessing as mlp, device
 from json_gui import p_logger, c_logger
 from json_gui.typedicts import CreationDict, SaveImageCallable, SavedImagesDict, get_empty_creation_dict
 from json_gui.scripts.mimic_classes import MimicNode
@@ -130,15 +129,12 @@ class NodeExecutor:
             tuple[str, SavedImagesDict, Any]: A tuple containing status, save data, and output or exception.
         """
         try:
-            torch_device: device = get_torch_device()
-            if torch_device.type != "cpu":
-                logging.info("Child process moving arguments to device: %s", str(torch_device))
-                node_init_args = NodeExecutor._safe_move_tensors_to_device(node_init_args, torch_device)
-                node_exec_args = NodeExecutor._safe_move_tensors_to_device(node_exec_args, torch_device)
-                raw_nodes_serialized = NodeExecutor._safe_move_tensors_to_device(raw_nodes_serialized, torch_device)
-            assert (
-                "last_saved_to_temp" in save_data and "created_images" in save_data
-            ), "Data dict must contain 'last_saved_to_temp' and 'created_images' keys."
+            # Arguments arrive on CPU (they were moved there for pickling) and stay there:
+            # like ComfyUI's native executor, tensors live on intermediate_device (CPU) and
+            # each component (sampler, VAE, controlnet) moves what it needs just-in-time
+            assert "last_saved_to_temp" in save_data and "created_images" in save_data, (
+                "Data dict must contain 'last_saved_to_temp' and 'created_images' keys."
+            )
             logging.info("Executing %s in child process", node_cls.__name__)
             # Reconstruct the main node from its class and init args
             node = node_cls(*node_init_args["args"], **node_init_args["kwargs"])
@@ -195,17 +191,20 @@ class NodeExecutor:
             tuple[str, SavedImagesDict, Any]: A tuple containing status, save data, and output or exception.
         """
         MimicNode.enable_multiprocess()
-        output_tuple = NodeExecutor._execute_target_node(
-            node_cls,
-            node_init_args,
-            node_exec_args,
-            raw_nodes_serialized,
-            save_call,
-            save_data,
-        )
-        # Validate serialization before putting in queue (queue.put uses background thread
-        # that swallows pickle errors silently) by moving tensors to CPU/detaching/cloning
-        result_tuple = NodeExecutor._safe_move_tensors_to_device(output_tuple)
+        # Same execution context as ComfyUI's executor (execution.py) and the single-process
+        # path (AbsFlow.run): no autograd tracking, lower peak VRAM during node execution
+        with inference_mode():
+            output_tuple = NodeExecutor._execute_target_node(
+                node_cls,
+                node_init_args,
+                node_exec_args,
+                raw_nodes_serialized,
+                save_call,
+                save_data,
+            )
+            # Validate serialization before putting in queue (queue.put uses background thread
+            # that swallows pickle errors silently) by moving tensors to CPU/detaching/cloning
+            result_tuple = NodeExecutor._safe_move_tensors_to_device(output_tuple)
         if result_tuple is None:
             raise RuntimeError("Result tuple could not be prepared for serialization.")
         logging.info("Putting result in queue... Output type: %s", type(result_tuple[2]).__name__)

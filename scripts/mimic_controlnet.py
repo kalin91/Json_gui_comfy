@@ -2,10 +2,9 @@
 
 from abc import ABC, abstractmethod
 import pickle
-import copy
 import logging
 from collections import Counter
-from typing import Any, Generic, Optional, Tuple, Type, TypeVar, Union, Self, cast
+from typing import Any, ClassVar, Generic, Optional, Tuple, Type, TypeVar, Union, Self
 import torch
 import folder_paths
 from comfy_extras.nodes_images import ResizeAndPadImage
@@ -17,69 +16,9 @@ from custom_nodes.comfyui_controlnet_aux import utils as aux_utils
 from custom_nodes.comfyui_controlnet_aux.src.custom_controlnet_aux.open_pose import OpenposeDetector
 from custom_nodes.comfyui_controlnet_aux.src.custom_controlnet_aux.canny import CannyDetector
 from json_gui.scripts.mimic import MimicNode, DataWrapper
-from json_gui.utils import is_unserializable_callable
 from json_gui.scripts.mimic_classes import SkipLayers, Conditional
 
 T = TypeVar("T")
-M = TypeVar("M", bound=MimicNode)
-
-
-def _replace_tensors_with_clones(obj: T, memo: dict[int, Any] | None = None) -> Optional[T]:
-    """
-    Recursively clones torch.Tensors inside an object.
-
-    Args:
-        obj (T): The object to process.
-        memo (dict[int, Any] | None, optional): A memoization dictionary to avoid processing the same object multiple
-        times. Defaults to None.
-
-    Returns:
-        Optional[T]: The processed object with tensors moved to the specified device.
-    """
-    if memo is None:
-        memo = {}
-
-    obj_id = id(obj)
-    if obj_id in memo:
-        return memo[obj_id]
-
-    # Handle unserializable callables first (lambdas, local functions, etc.)
-    if is_unserializable_callable(obj):
-        memo[obj_id] = obj
-        return obj
-
-    if isinstance(obj, torch.Tensor):
-        # detach() removes from computation graph, clone() creates independent memory,
-        res = obj.detach().clone()
-
-        # res.share_memory_()
-        memo[obj_id] = res
-        return res
-    if isinstance(obj, dict):
-        res = {}
-        memo[obj_id] = res
-        for k, v in obj.items():
-            res[k] = _replace_tensors_with_clones(v, memo)
-        return cast(T, res)
-    if isinstance(obj, list):
-        res = []
-        memo[obj_id] = res
-        for x in obj:
-            res.append(_replace_tensors_with_clones(x, memo))
-        return cast(T, res)
-    if isinstance(obj, (tuple, set)):
-        cls = type(obj)
-        res = cls(_replace_tensors_with_clones(x, memo) for x in obj)
-        memo[obj_id] = res
-        return cast(T, res)
-    if hasattr(obj, "__dict__") and not isinstance(obj, type):
-        # For custom objects, recursively process their attributes
-        memo[obj_id] = obj
-        for k, v in list(obj.__dict__.items()):
-            setattr(obj, k, _replace_tensors_with_clones(v, memo))
-        return obj
-    memo[obj_id] = obj
-    return obj
 
 
 class ControlNetImgPreprocessor(Generic[T], MimicNode[T], ABC):
@@ -138,27 +77,6 @@ class ApplyControlNet(MimicNode[tuple[DataWrapper[Conditional], DataWrapper[Cond
         """Returns the key for the ApplyControlNet."""
         return "apply_control_net"
 
-    @staticmethod
-    def _safe_replace_tensors_with_clones(obj: T) -> T:
-        """
-        Safely replace object's tensors with clones, handling exceptions.
-
-        Args:
-            obj (T): The object containing tensors to clone.
-        Returns:
-            T: The object with tensors replaced by their clones.
-        Raises:
-            Exception: If cloning the tensors fails.
-        """
-        try:
-            res = _replace_tensors_with_clones(obj)
-            if res is None:
-                raise RuntimeError("Object could not be processed for tensor cloning.")
-            return res
-        except Exception as e:
-            logging.exception("Failed to replace tensors with clones.")
-            raise e
-
     @property
     def target(self) -> Optional[ControlNetImgPreprocessor]:
         """Returns the target ControlNet image preprocessor."""
@@ -166,7 +84,8 @@ class ApplyControlNet(MimicNode[tuple[DataWrapper[Conditional], DataWrapper[Cond
             logging.warning("ApplyControlNet target is None.")
         return self._target
 
-    CNET_CACHE: Optional[ControlNet] = None
+    # Pristine ControlNet models keyed by path; never mutated, only copied from.
+    CNET_CACHE: ClassVar[dict[str, ControlNet]] = {}
 
     def _log_pickle_size(self, msg: str, p_input: Any) -> None:
         """
@@ -226,51 +145,47 @@ class ApplyControlNet(MimicNode[tuple[DataWrapper[Conditional], DataWrapper[Cond
         controlnet_paths: list[str], cond: Conditional, cnet_attrs: list[dict[str, Any]]
     ) -> Conditional:
         """
-        Applies the ControlNet model to the given conditional.
+        Rebuilds the ControlNet chain and attaches it to the given conditional.
+
+        Each ControlNet model is loaded at most once per process into CNET_CACHE (pristine, keyed by
+        path). Every rebuild works on a copy of the cached model, so concurrent chains (e.g. positive
+        and negative conditionals) never share mutable state, and each attrs dict is applied to the
+        controlnet at the same position in the chain.
 
         Args:
-            controlnet_paths (list[str]): The paths to the ControlNet models.
-            cond (Conditional): The conditional to apply the ControlNet to.
-            cnet_attrs (list[dict[str, Any]]): The list of ControlNet attributes to set.
+            controlnet_paths (list[str]): The paths to the ControlNet models, outermost first.
+            cond (Conditional): The conditional to apply the ControlNet chain to.
+            cnet_attrs (list[dict[str, Any]]): Per-controlnet attributes, aligned with controlnet_paths.
 
         Returns:
-            DataWrapper: A DataWrapper containing the updated conditional with the ControlNet applied.
+            Conditional: The updated conditional with the rebuilt ControlNet chain applied.
         """
         if len(controlnet_paths) != len(cnet_attrs):
             raise ValueError("Number of controlnet paths must match number of condition hints.")
+        if not controlnet_paths:
+            raise ValueError("At least one controlnet path is required to rebuild the ControlNet chain.")
 
         vae: VAE = ApplyControlNet._get_current_model(SkipLayers).vae
-        controlnet_paths = copy.deepcopy(controlnet_paths)
-        cnet_attrs = copy.deepcopy(cnet_attrs)
-        controlnet: ControlNet
-        controlnet_full_path = folder_paths.get_full_path_or_raise("controlnet", controlnet_paths.pop(0))
-        cached: bool = False
-        if ApplyControlNet.CNET_CACHE is not None:
-            controlnet = copy.copy(ApplyControlNet.CNET_CACHE)
-            cached = True
-        else:
-            controlnet = load_controlnet(controlnet_full_path)
-            ApplyControlNet.CNET_CACHE = controlnet
+        first_controlnet: Optional[ControlNet] = None
+        prev_controlnet: Optional[ControlNet] = None
+        for path, attrs in zip(controlnet_paths, cnet_attrs):
+            base = ApplyControlNet.CNET_CACHE.get(path)
+            if base is None:
+                controlnet_full_path = folder_paths.get_full_path_or_raise("controlnet", path)
+                base = load_controlnet(controlnet_full_path)
+                ApplyControlNet.CNET_CACHE[path] = base
+            # copy() shares model weights but yields an independent wrapper with previous_controlnet unset,
+            # so pos/neg conds each get their own chain and the cached model is never mutated
+            controlnet: ControlNet = base.copy()
             controlnet.vae = vae
-            for k, v in cnet_attrs.pop(0).items():
+            for k, v in attrs.items():
                 setattr(controlnet, k, v)
-        first_controlnet = controlnet
-        for path in controlnet_paths:
-            controlnet_full_path = folder_paths.get_full_path_or_raise("controlnet", path)
-            next_controlnet: ControlNet
-            if cached:
-                next_controlnet = copy.copy(controlnet.previous_controlnet)
+            if prev_controlnet is None:
+                first_controlnet = controlnet
             else:
-                next_controlnet = load_controlnet(controlnet_full_path)
-                next_controlnet.vae = vae
-            for k, v in cnet_attrs.pop(0).items():
-                setattr(next_controlnet, k, v)
-            controlnet.previous_controlnet = next_controlnet
-            controlnet = next_controlnet
-        if cached:
-            first_controlnet = ApplyControlNet._safe_replace_tensors_with_clones(first_controlnet)
+                prev_controlnet.previous_controlnet = controlnet
+            prev_controlnet = controlnet
         cond[0][1]["control"] = first_controlnet
-        # ApplyControlNet.CNET_CACHE = copy.copy(first_controlnet)
         return cond
 
     # pylint: disable=W0221
